@@ -1,5 +1,5 @@
 # AI_Calendar
-Full-Stac
+Full-Stack
 
 Model: GPI API first, hugging face find model next
 
