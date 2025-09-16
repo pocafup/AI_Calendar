@@ -1,9 +1,14 @@
 # AI_Calendar
-Full-Stac
+Full-Stack
+
 Model: GPI API first, hugging face find model next
+
 DB: NoSQL first (Mongo)
+
 Webapp: python
+
 Server: Cloudflare & Oracle
+
 Security browser: redis
 
 Step 1:
