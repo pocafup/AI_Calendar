@@ -1,4 +1,15 @@
 # AI_Calendar
+## Installation:
+
+```terminal
+```terminal
+git clone git@github.com:pocafup/AI_Calendar.git
+cd AI_Calendar
+docker compose build
+```
+```
+
+#### Saved Notes, will delete later
 Full-Stack
 
 Model: GPI API first, hugging face find model next

@@ -6,9 +6,11 @@ authors = [
     {name = "pocafup",email = "pocafup@pocafupdeMacBook-Air.local"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
-    "fastapi (>=0.116.2,<0.117.0)"
+    "fastapi (>=0.116.2,<0.117.0)",
+    "flask (>=3.1.2,<4.0.0)",
+    "requests (>=2.32.5,<3.0.0)"
 ]
 
 
