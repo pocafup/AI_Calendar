@@ -22,6 +22,7 @@ cd AI_Calendar
 
 <details>
   <summary>For local development</summary>
+
   ```terminal
   poetry install --no-interaction --no-root no-ansi
   poetry run pytnon client/src/app.py
