@@ -12,4 +12,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["poetry","run","flask","--app","client/src/App","run","--host=0.0.0.0"]
+CMD ["poetry","run", "python", "client/src/app.py"]
