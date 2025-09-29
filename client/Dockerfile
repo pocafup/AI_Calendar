@@ -1,6 +1,6 @@
 FROM python:3.11-slim AS base
 
-WORKDIR /app  
+WORKDIR /app
 
 RUN pip install --upgrade pip && pip install "poetry==2.1.2" 
 
