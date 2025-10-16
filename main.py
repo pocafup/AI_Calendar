@@ -1,4 +1,3 @@
-from fastapi import fastapi
 
 """
 File Structures:
@@ -29,6 +28,7 @@ root/
                 user.py
             routes/
             services/
+                sanitization.py
             tools/
             utils/
                 authUtil.py
@@ -43,5 +43,3 @@ root/
 """
 
 
-if __name__ == "main":
-    return

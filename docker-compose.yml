@@ -1,9 +1,41 @@
+
 services:
-  web:
+  client:
     build:
       context: .
-      dockerfile: ./client/Dockerfile 
+      dockerfile: client/Dockerfile
     container_name: calendar
+    environment:
+      - BACKEND_URL=http://server:5003
     ports:
-      - "5000:5000" 
+      - "5002:5002"
     restart: unless-stopped
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: calendar-backend
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/calendar   # <—
+    depends_on:
+      - mongo
+    ports:
+      - "5003:5003"
+    restart: unless-stopped
+
+  mongo:                                           # <— rename `db` -> `mongo`
+    image: mongo:7
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_DATABASE: calendar
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+    volumes:
+      - dbdata:/data/db
+
+volumes:
+  dbdata:
