@@ -5,12 +5,10 @@ WORKDIR /app
 
 RUN pip install --upgrade pip && pip install "poetry==2.1.2"
 
-# pyproject is at repo root (context = .), so this works:
 COPY pyproject.toml poetry.lock* ./
 RUN poetry install --no-interaction --no-root --no-ansi
 
-# bring in only client code
-COPY client/src/ ./src
+COPY server/src/ ./src
 
-EXPOSE 5002
-CMD ["poetry","run","python","src/app.py"]
+EXPOSE 5003
+CMD ["poetry","run","python","src/server.py"]
