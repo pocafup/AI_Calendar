@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Calendar - Dashboard</title>
+
+    <!-- DESIGN UPDATE: TailwindCSS added for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- DESIGN UPDATE: Calendar + Task Logic -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const monthName = document.getElementById("month-name");
+            const grid = document.getElementById("calendar-grid");
+            const taskList = document.getElementById("task-list");
+            const modal = document.getElementById("task-modal");
+            const modalDate = document.getElementById("modal-date");
+            const taskForm = document.getElementById("task-form");
+
+            let current = new Date();
+            let selectedDate = null;
+
+            // Local-only task storage (Frontend only)
+            const tasks = {};
+
+            function renderCalendar() {
+                grid.innerHTML = "";
+                monthName.textContent = current.toLocaleString("default", { month: "long", year: "numeric" });
+
+                const firstDay = new Date(current.getFullYear(), current.getMonth(), 1).getDay();
+                const days = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate();
+
+                // Empty slots before the first day
+                for (let i = 0; i < firstDay; i++) {
+                    grid.innerHTML += `<div></div>`;
+                }
+
+                // Day cells
+                for (let d = 1; d <= days; d++) {
+                    const dateKey = formatDate(current.getFullYear(), current.getMonth(), d);
+
+                    grid.innerHTML += `
+                        <div class="p-3 text-center border rounded-lg bg-white hover:bg-blue-100 cursor-pointer"
+                             onclick="selectDate('${dateKey}')">
+                            ${d}
+                        </div>
+                    `;
+                }
+            }
+
+            // Make function global for onclick
+            window.selectDate = (dateKey) => {
+                selectedDate = dateKey;
+                modalDate.textContent = selectedDate;
+                renderTasks();
+            };
+
+            // Render tasks for the selected date
+            function renderTasks() {
+                taskList.innerHTML = "";
+
+                if (!selectedDate || !tasks[selectedDate]) {
+                    taskList.innerHTML = `<p class="text-gray-500">No tasks for this day.</p>`;
+                    return;
+                }
+
+                tasks[selectedDate].forEach(task => {
+                    taskList.innerHTML += `
+                        <div class="p-3 bg-white shadow rounded-lg mb-2">
+                            <div class="flex justify-between">
+                                <span>${task.text}</span>
+                                <span class="px-3 py-1 rounded text-white text-sm ${priorityColor(task.priority)}">
+                                    ${task.priority}
+                                </span>
+                            </div>
+
+                            <!-- DESIGN UPDATE: Show due date & deadline -->
+                            <div class="text-sm text-gray-600 mt-1">
+                                <strong>Due:</strong> ${task.dueDate || "—"}  
+                                ${task.deadline ? ` | <strong>Time:</strong> ${task.deadline}` : ""}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Handle adding a new task
+            taskForm.addEventListener("submit", (e) => {
+                e.preventDefault();
+
+                const text = document.getElementById("task-text").value;
+                const priority = document.getElementById("task-priority").value;
+                const dueDate = document.getElementById("task-due-date").value;  // DESIGN UPDATE
+                const deadline = document.getElementById("task-deadline").value; // DESIGN UPDATE
+
+                if (!tasks[selectedDate]) tasks[selectedDate] = [];
+
+                tasks[selectedDate].push({
+                    text,
+                    priority,
+                    dueDate,
+                    deadline
+                });
+
+                taskForm.reset();
+                closeModal();
+                renderTasks();
+            });
+
+            // Modal open/close behavior
+            document.getElementById("add-task-btn").onclick = () => {
+                if (!selectedDate) return alert("Please select a date first.");
+                modal.classList.remove("hidden");
+            };
+
+            window.closeModal = () => modal.classList.add("hidden");
+
+            // Priority color helper
+            function priorityColor(level) {
+                if (level === "High") return "bg-red-500";
+                if (level === "Medium") return "bg-yellow-500";
+                return "bg-green-500"; // Low
+            }
+
+            // Date formatter
+            function formatDate(y, m, d) {
+                return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+            }
+
+            // Navigation buttons
+            document.getElementById("prev").onclick = () => {
+                current.setMonth(current.getMonth() - 1);
+                renderCalendar();
+            };
+            document.getElementById("next").onclick = () => {
+                current.setMonth(current.getMonth() + 1);
+                renderCalendar();
+            };
+
+            renderCalendar();
+        });
+    </script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col items-center">
+
+    <!-- HEADER -->
+    <header class="w-full bg-white shadow p-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-blue-600">AI Calendar</h1>
+
+        <nav class="space-x-4">
+            <a href="/dashboard" class="text-gray-700 hover:text-blue-600">Dashboard</a>
+            <a href="/login" class="text-gray-700 hover:text-blue-600">Logout</a>
+        </nav>
+    </header>
+
+    <!-- MAIN PANEL -->
+    <main class="bg-white shadow-lg rounded-xl p-8 w-full max-w-4xl mt-10">
+
+        <!-- Month Navigation -->
+        <div class="flex justify-between items-center mb-6">
+            <button id="prev" class="px-4 py-2 bg-blue-500 text-white rounded-lg">◀</button>
+            <h2 id="month-name" class="text-2xl font-semibold text-gray-800"></h2>
+            <button id="next" class="px-4 py-2 bg-blue-500 text-white rounded-lg">▶</button>
+        </div>
+
+        <!-- Week Header -->
+        <div class="grid grid-cols-7 gap-2 text-gray-600 font-semibold mb-2">
+            <div class="text-center">Sun</div>
+            <div class="text-center">Mon</div>
+            <div class="text-center">Tue</div>
+            <div class="text-center">Wed</div>
+            <div class="text-center">Thu</div>
+            <div class="text-center">Fri</div>
+            <div class="text-center">Sat</div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div id="calendar-grid" class="grid grid-cols-7 gap-2"></div>
+
+        <!-- Add Task Button -->
+        <div class="flex justify-end mt-6">
+            <button id="add-task-btn"
+                    class="px-5 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">
+                + Add Task
+            </button>
+        </div>
+
+        <!-- Task List -->
+        <h3 class="text-xl font-semibold mt-6 mb-3">Task List</h3>
+        <div id="task-list" class="min-h-[120px]">
+            <p class="text-gray-500">Select a date to view tasks.</p>
+        </div>
+    </main>
+
+    <!-- TASK MODAL -->
+    <div id="task-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+
+        <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-sm">
+            <h3 class="text-lg font-bold mb-3">Add New Task</h3>
+
+            <p class="text-gray-600 mb-2">Selected Date: <span id="modal-date" class="font-semibold"></span></p>
+
+            <form id="task-form" class="space-y-4">
+                
+                <!-- Task Title -->
+                <input id="task-text" type="text" placeholder="Task description"
+                       class="w-full px-3 py-2 border rounded-lg" required />
+
+                <!-- Priority -->
+                <select id="task-priority" class="w-full px-3 py-2 border rounded-lg">
+                    <option>High</option>
+                    <option>Medium</option>
+                    <option>Low</option>
+                </select>
+
+                <!-- DESIGN UPDATE: Due Date -->
+                <label class="block text-gray-600">Due Date</label>
+                <input id="task-due-date" type="date"
+                    class="w-full px-3 py-2 border rounded-lg" />
+
+                <!-- DESIGN UPDATE: Deadline Time -->
+                <label class="block text-gray-600">Deadline Time</label>
+                <input id="task-deadline" type="time"
+                    class="w-full px-3 py-2 border rounded-lg" />
+
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal()"
+                            class="px-4 py-2 bg-gray-300 rounded-lg">
+                        Cancel
+                    </button>
+
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
+

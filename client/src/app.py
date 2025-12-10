@@ -9,7 +9,9 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://server:5003")
 
 @app.get("/")
 def home():
-    return "Hello World"
+    # DESIGN UPDATE: Redirect root to dashboard page
+    return redirect(url_for("dashboard"))
+
 
 # ---------- Login ----------
 @app.route("/login", methods=["GET", "POST"])
@@ -65,7 +67,19 @@ def register():
 
 @app.get("/dashboard")
 def dashboard():
-    return "Welcome to your AI Calendar!"
+    # DESIGN UPDATE: Changed plain text to render calendar template
+    return render_template("calendar.html")
+
+
+@app.get("/analytics")
+def analytics():
+    # DESIGN UPDATE: Added analytics page
+    return render_template("analytics.html")
+
+@app.get("/task/<task_id>")
+def task_detail(task_id):
+    # DESIGN UPDATE: Task detail page (placeholder)
+    return render_template("task_detail.html")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5002)
+    app.run(host="0.0.0.0", port=5002, debug=True)
