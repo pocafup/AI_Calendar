@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Calendar - Priority View</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        const BACKEND_URL = "{{ backend_url }}";
+        const CURRENT_USER = "{{ username }}";
+    </script>
+    <script src="{{ url_for('static', filename='priority.js') }}" defer></script>
+
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col items-center">
+
+    <!-- Header -->
+    <header class="w-full bg-white shadow p-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-blue-600">AI Calendar - Priority</h1>
+        <nav class="space-x-4">
+            <a href="/dashboard" class="text-gray-700 hover:text-blue-600">Calendar</a>
+            <a href="/analytics" class="text-gray-700 hover:text-blue-600">Analytics</a>
+            <a href="/priority" class="text-blue-600 font-semibold">Priority</a>
+            <a href="/login" class="text-gray-700 hover:text-blue-600">Logout</a>
+        </nav>
+    </header>
+
+    <!-- Main content -->
+    <main class="w-full max-w-5xl mt-10 p-8 bg-white rounded-xl shadow">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+            Task Priority Ranking
+        </h2>
+
+        <p class="text-gray-600 mb-4">
+            Tasks are currently ranked by your assigned priority (High → Medium → Low) and due date.
+            We’ll add AI-based ranking here next.
+        </p>
+
+        <!-- Status messages -->
+        <div id="priority-status" class="text-sm text-gray-500 mb-4">
+            Loading tasks...
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Rank</th>
+                        <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Task</th>
+                        <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Date</th>
+                        <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Priority</th>
+                        <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Details</th>
+                    </tr>
+                </thead>
+                <tbody id="priority-table-body" class="divide-y divide-gray-200">
+                    <!-- Filled by priority.js -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+</html>
+
