@@ -1,51 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Calendar - Analytics</title>
 
-    <!-- DESIGN UPDATE -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js for the graph -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="bg-gray-100 min-h-screen flex flex-col items-center">
 
-    <!-- Header -->
-    <header class="w-full bg-white shadow p-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold text-blue-600">AI Calendar - Analytics</h1>
-        <a href="/dashboard" class="text-gray-700 hover:text-blue-600">Back to Calendar</a>
-    </header>
+  <!-- Header -->
+  <header class="w-full bg-white shadow p-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-blue-600">AI Calendar - Analytics</h1>
+    <nav class="flex items-center gap-6 text-sm">
+      <span class="text-gray-600">
+        Logged in as <span class="font-semibold">{{ username }}</span>
+      </span>
+      <a href="/dashboard" class="text-gray-700 hover:text-blue-600">Dashboard</a>
+      <a href="/priority" class="text-gray-700 hover:text-blue-600">Priority</a>
+      <a href="/logout" class="text-gray-700 hover:text-blue-600">Logout</a>
+    </nav>
+  </header>
 
-    <!-- Analytics Container -->
-    <main class="w-full max-w-6xl mt-10 p-8 bg-white rounded-xl shadow">
+  <!-- Analytics Container -->
+  <main class="w-full max-w-6xl mt-10 p-8 bg-white rounded-xl shadow">
 
-        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Your Productivity Overview</h2>
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-2xl font-semibold text-gray-800 mb-1">Your Productivity Overview</h2>
+        <p id="analytics-status" class="text-gray-500 text-sm">
+          Loading analytics…
+        </p>
+      </div>
+    </div>
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
 
-            <div class="p-6 bg-blue-50 rounded-xl shadow">
-                <p class="text-gray-600 text-sm">Total Tasks</p>
-                <p class="text-3xl font-bold text-blue-600">42</p>
-            </div>
+      <div class="p-6 bg-blue-50 rounded-xl shadow flex flex-col">
+        <p class="text-gray-600 text-sm">Total Tasks</p>
+        <p id="total-tasks-count" class="text-3xl font-bold text-blue-600">0</p>
+        <p class="mt-1 text-xs text-gray-500">All tasks you’ve created.</p>
+      </div>
 
-            <div class="p-6 bg-red-50 rounded-xl shadow">
-                <p class="text-gray-600 text-sm">High Priority</p>
-                <p class="text-3xl font-bold text-red-500">12</p>
-            </div>
+      <div class="p-6 bg-red-50 rounded-xl shadow flex flex-col">
+        <p class="text-gray-600 text-sm">High Priority (Active)</p>
+        <p id="high-priority-count" class="text-3xl font-bold text-red-500">0</p>
+        <p class="mt-1 text-xs text-gray-500">High priority tasks not yet completed.</p>
+      </div>
 
-            <div class="p-6 bg-green-50 rounded-xl shadow">
-                <p class="text-gray-600 text-sm">Completed</p>
-                <p class="text-3xl font-bold text-green-500">27</p>
-            </div>
-        </div>
+      <div class="p-6 bg-green-50 rounded-xl shadow flex flex-col">
+        <p class="text-gray-600 text-sm">Completed Tasks</p>
+        <p id="completed-tasks-count" class="text-3xl font-bold text-green-500">0</p>
+        <p class="mt-1 text-xs text-gray-500">Tasks you’ve marked as complete.</p>
+      </div>
+    </div>
 
-        <!-- Graph Placeholder -->
-        <div class="bg-gray-50 rounded-xl h-64 flex items-center justify-center text-gray-500">
-            <!-- DESIGN UPDATE -->
-            Monthly tasks graph (coming soon)
-        </div>
-    </main>
+    <!-- Graph -->
+    <div class="bg-gray-50 rounded-xl p-4 md:p-6 shadow-inner">
+      <h3 class="text-lg font-semibold text-gray-800 mb-3">
+        Tasks per Day (last 30 days)
+      </h3>
+      <div class="h-64">
+        <canvas id="tasksChart"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const backendUrl = "{{ backend_url }}";
+    const currentUsername = "{{ username }}";
+
+    const statusEl = document.getElementById("analytics-status");
+    const totalEl = document.getElementById("total-tasks-count");
+    const highEl = document.getElementById("high-priority-count");
+    const completedEl = document.getElementById("completed-tasks-count");
+
+    let tasksChart = null;
+
+    async function loadAnalytics() {
+      statusEl.textContent = "Loading analytics…";
+
+      try {
+        const url = `${backendUrl}/analytics/summary?username=${encodeURIComponent(currentUsername)}`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          console.error("Analytics fetch error:", await res.text());
+          statusEl.textContent = "Error loading analytics.";
+          return;
+        }
+
+        const data = await res.json();
+        totalEl.textContent = data.total_tasks ?? 0;
+        highEl.textContent = data.high_priority_active ?? 0;
+        completedEl.textContent = data.completed_tasks ?? 0;
+
+        statusEl.textContent = `Loaded analytics for ${currentUsername}.`;
+
+        renderChart(data.by_date || []);
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Network error while loading analytics.";
+      }
+    }
+
+    function renderChart(byDate) {
+      const ctx = document.getElementById("tasksChart").getContext("2d");
+
+      const labels = byDate.map(d => d.date);
+      const totalData = byDate.map(d => d.total);
+      const completedData = byDate.map(d => d.completed);
+
+      if (tasksChart) {
+        tasksChart.destroy();
+      }
+
+      tasksChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Total tasks",
+              data: totalData,
+              borderWidth: 2,
+              tension: 0.2,
+            },
+            {
+              label: "Completed tasks",
+              data: completedData,
+              borderWidth: 2,
+              borderDash: [4, 4],
+              tension: 0.2,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                precision: 0,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    loadAnalytics();
+  </script>
 </body>
 </html>
+

@@ -1,68 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Calendar - Priority View</title>
-
-    <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        const BACKEND_URL = "{{ backend_url }}";
-        const CURRENT_USER = "{{ username }}";
-    </script>
-    <script src="{{ url_for('static', filename='priority.js') }}" defer></script>
-
+  <meta charset="UTF-8" />
+  <title>Task Priority Ranking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
+<body class="bg-gray-100 min-h-screen">
 
-<body class="bg-gray-100 min-h-screen flex flex-col items-center">
+  <!-- Top nav / header -->
+  <header class="w-full bg-white shadow p-4 flex justify-between items-center">
+    <div class="flex items-baseline gap-2">
+      <span class="text-xl font-bold text-blue-600">AI Calendar</span>
+      <span class="text-sm text-gray-500">Priority</span>
+    </div>
 
-    <!-- Header -->
-    <header class="w-full bg-white shadow p-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold text-blue-600">AI Calendar - Priority</h1>
-        <nav class="space-x-4">
-            <a href="/dashboard" class="text-gray-700 hover:text-blue-600">Calendar</a>
-            <a href="/analytics" class="text-gray-700 hover:text-blue-600">Analytics</a>
-            <a href="/priority" class="text-blue-600 font-semibold">Priority</a>
-            <a href="/login" class="text-gray-700 hover:text-blue-600">Logout</a>
-        </nav>
-    </header>
+    <div class="flex items-center gap-6 text-sm">
+      <span>Logged in as <span class="font-semibold">{{ username }}</span></span>
+      <a href="{{ url_for('dashboard') }}" class="hover:text-blue-600">Dashboard</a>
+      <a href="{{ url_for('analytics') }}" class="hover:text-blue-600">Analytics</a>
+      <a href="{{ url_for('logout') }}" class="hover:text-blue-600">Logout</a>
+    </div>
+  </header>
 
-    <!-- Main content -->
-    <main class="w-full max-w-5xl mt-10 p-8 bg-white rounded-xl shadow">
-        <h2 class="text-2xl font-semibold text-gray-800 mb-4">
-            Task Priority Ranking
-        </h2>
+  <main class="max-w-6xl mx-auto mt-10 bg-white rounded-2xl shadow p-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Task Priority Ranking</h1>
+    <p class="text-gray-600 mb-6">
+      Tasks are currently ranked by your assigned priority (High → Medium → Low) and due date, plus an AI score.
+      Completed tasks disappear from this list.
+    </p>
 
-        <p class="text-gray-600 mb-4">
-            Tasks are currently ranked by your assigned priority (High → Medium → Low) and due date.
-            We’ll add AI-based ranking here next.
-        </p>
+    <p id="priority-status" class="text-sm text-gray-500 mb-4">
+      Loading tasks…
+    </p>
 
-        <!-- Status messages -->
-        <div id="priority-status" class="text-sm text-gray-500 mb-4">
-            Loading tasks...
-        </div>
+    <div class="overflow-x-auto rounded-xl border border-gray-200">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold text-gray-700">Rank</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-700">Task</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-700">Date</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-700">Priority</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-700">Details</th>
+            <th class="px-4 py-3 text-right font-semibold text-gray-700">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="priority-body" class="divide-y divide-gray-100 bg-white">
+          <!-- rows injected by JS -->
+        </tbody>
+      </table>
+    </div>
+  </main>
 
-        <!-- Table -->
-        <div class="overflow-x-auto">
-            <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Rank</th>
-                        <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Task</th>
-                        <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Date</th>
-                        <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Priority</th>
-                        <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Details</th>
-                    </tr>
-                </thead>
-                <tbody id="priority-table-body" class="divide-y divide-gray-200">
-                    <!-- Filled by priority.js -->
-                </tbody>
-            </table>
-        </div>
-    </main>
+  <script>
+    const backendUrl = "{{ backend_url }}";
+    const currentUsername = "{{ username }}";
+
+    const statusEl = document.getElementById("priority-status");
+    const tbody = document.getElementById("priority-body");
+
+    function priorityBadge(priority) {
+      const base = "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold";
+      if (priority === "High")   return `${base} bg-red-500 text-white`;
+      if (priority === "Medium") return `${base} bg-yellow-400 text-gray-900`;
+      return `${base} bg-green-500 text-white`; // Low
+    }
+
+    function detailsText(task) {
+      const due = task.due_date || "—";
+      const desc = task.event_description || "";
+      return `${desc ? desc + " " : ""}Due: ${due}`;
+    }
+
+    async function loadPriorityTasks() {
+      statusEl.textContent = "Loading tasks…";
+
+      try {
+        const url = `${backendUrl}/tasks/priorities?username=${encodeURIComponent(currentUsername)}`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          statusEl.textContent = "Error loading tasks.";
+          console.error("Priority fetch error:", await res.text());
+          return;
+        }
+        const tasks = await res.json();
+        statusEl.textContent = `Loaded ${tasks.length} task(s).`;
+        renderPriorityRows(tasks);
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Network error while loading tasks.";
+      }
+    }
+
+    function renderPriorityRows(tasks) {
+      tbody.innerHTML = "";
+
+      if (!tasks.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="px-4 py-6 text-center text-gray-500">
+              No active tasks. Mark new tasks and they'll show here.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tasks.forEach((task, idx) => {
+        const tr = document.createElement("tr");
+        tr.className = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
+
+        tr.innerHTML = `
+          <td class="px-4 py-3 text-gray-700">${idx + 1}</td>
+          <td class="px-4 py-3 font-medium text-gray-900">${task.event_name || "Untitled"}</td>
+          <td class="px-4 py-3 text-gray-700">${task.date || "—"}</td>
+          <td class="px-4 py-3">
+            <span class="${priorityBadge(task.priority)}">${task.priority || "Medium"}</span>
+          </td>
+          <td class="px-4 py-3 text-gray-600">
+            ${detailsText(task)}
+          </td>
+          <td class="px-4 py-3 text-right">
+            <button
+              class="complete-btn inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold bg-green-600 text-white hover:bg-green-700"
+              data-id="${task.id}">
+              ✓ Complete
+            </button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      // wire up the buttons
+      document.querySelectorAll(".complete-btn").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          const id = e.currentTarget.getAttribute("data-id");
+          await markTaskComplete(id);
+        });
+      });
+    }
+
+    async function markTaskComplete(taskId) {
+      if (!confirm("Mark this task as complete?")) return;
+
+      try {
+        const res = await fetch(`${backendUrl}/tasks/${encodeURIComponent(taskId)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_active: false }),
+        });
+
+        if (!res.ok) {
+          console.error("Complete error:", await res.text());
+          alert("Error marking task as complete.");
+          return;
+        }
+
+        await loadPriorityTasks();  // refresh table
+      } catch (err) {
+        console.error(err);
+        alert("Network error while marking complete.");
+      }
+    }
+
+    // initial load
+    loadPriorityTasks();
+  </script>
 </body>
 </html>
 

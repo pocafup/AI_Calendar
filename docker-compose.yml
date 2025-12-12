@@ -21,8 +21,7 @@ services:
     container_name: calendar-backend
     environment:
       - MONGO_URI=mongodb://mongo:27017/calendar   # <—
-      - OPENAI_API_KEY= "ADD HERE!"
-
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
       - mongo
     ports:
